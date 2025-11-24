@@ -539,7 +539,7 @@ sensor:
   - platform: rest
     name: "Living Room Temperature"
     resource: "http://localhost:4407/zones/1"
-    value_template: "{{ value_json.current_temperature }}"
+    value_template: "{{ value_json.zone.state.cur_temp_c }}"
     unit_of_measurement: "°C"
 
 climate:
