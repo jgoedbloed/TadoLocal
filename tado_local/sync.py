@@ -208,11 +208,15 @@ class TadoCloudSync:
                     synced_devices += 1
 
                     # Update zone leader if this device is the leader
-                    # DISABLED: Tado handles circuit driver relationships internally
-                    # if is_leader:
-                    #     cursor.execute("""
-                    #         UPDATE zones SET leader_device_id = ? WHERE zone_id = ?
-                    #     """, (device_id, zone_id))
+                    # Update zone leader if this device is the leader
+                    if is_leader:
+                        try:
+                            cursor.execute("""
+                                UPDATE zones SET leader_device_id = ? WHERE zone_id = ?
+                            """, (device_id, zone_id))
+                            logger.debug(f"Set leader device {device_id} for zone {zone_name}")
+                        except Exception as e:
+                            logger.debug(f"Failed to set leader device for zone {zone_name}: {e}")
 
                 # Remove any zones from this home that are no longer present in cloud data
                 try:

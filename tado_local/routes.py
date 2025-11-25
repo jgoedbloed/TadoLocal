@@ -865,7 +865,30 @@ def register_routes(app: FastAPI, get_tado_api):
         zone_name, leader_device_id, leader_serial = row
 
         if not leader_device_id:
-            raise HTTPException(status_code=400, detail=f"Zone '{zone_name}' has no leader device assigned")
+            # No explicit leader assigned - fall back to the first device in the zone
+            conn = sqlite3.connect(tado_api.state_manager.db_path)
+            cur = conn.execute(
+                """
+                SELECT device_id, serial_number, name
+                FROM devices
+                WHERE zone_id = ?
+                ORDER BY device_id
+                LIMIT 1
+                """,
+                (zone_id,)
+            )
+            dev = cur.fetchone()
+            conn.close()
+
+            if dev:
+                leader_device_id = dev[0]
+                leader_serial = dev[1]
+                logger.warning(
+                    "Zone %s ('%s') has no leader assigned; falling back to device %s (%s)",
+                    zone_id, zone_name, leader_device_id, leader_serial
+                )
+            else:
+                raise HTTPException(status_code=400, detail=f"Zone '{zone_name}' has no leader device assigned")
 
         # Build characteristic updates
         char_updates = {}
